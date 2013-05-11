@@ -155,7 +155,6 @@ urlencoded_parse(Data) ->
     Parsed = parse_gets(Data),
     ParsedLength = length(Parsed),
     CleanLength = length([{K, V} || {K, V} <- Parsed, K =/= <<>>, V =/= <<>>]),
-    io:format("~p ~p ~p ~p~n", [Data, Parsed, ParsedLength, CleanLength]),
     if
         CleanLength == ParsedLength -> Parsed;
         true -> {error, json_error, "Can't parse json"}
@@ -181,7 +180,7 @@ http_request_json(Method, Request, OnSuccess) ->
 post({NetName, Network}, Url, Params) ->
     http_request_json(post, {binary_to_list(Url), [], "application/x-www-form-urlencoded",
             url_encode(Params)},
-        fun(JSON) -> io:format("~p~n", [JSON]), case json_parse(JSON) of
+        fun(JSON) -> case json_parse(JSON) of
                 {error, _, _} = Error -> Error;
                 Hash -> case proplists:get_value(<<"error">>, Hash, undefined) of
                         undefined -> {ok, get_profile_info(Network, [
@@ -216,7 +215,7 @@ get_profile_info(Network, Auth) ->
                                     {K, proplists:get_value(access_token, Auth)};
                                 (P) -> P end, proplists:get_value(userinfo_params, Network))
                         })), []},
-            fun(JSON) -> io:format("~p~n", [JSON]), case json_parse(JSON) of
+            fun(JSON) -> case json_parse(JSON) of
                 {error, _, _} = Error -> Error;
                 Profile -> Profile1 = case proplists:get_value(field_pre, Network) of
                         undefined -> Profile; F -> F(Profile) end,
