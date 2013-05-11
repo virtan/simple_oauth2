@@ -9,26 +9,6 @@
 
 predefined_networks() ->
     [
-        {<<"facebook">>, [ % https://developers.facebook.com/apps/
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
-                {callback_uri, <<"/auth/facebook/callback">>},
-                {scope, <<"email">>},
-                {authorize_uri, <<"https://www.facebook.com/dialog/oauth">>},
-                {token_uri, <<"https://graph.facebook.com/oauth/access_token">>},
-                {userinfo_uri, <<"https://graph.facebook.com/me">>},
-                {userinfo_params, [{access_token, access_token},
-                        {fields, <<"id,email,name,picture,gender,locale">>}]},
-                {field_names, [id, email, name, undefined, gender, locale]}
-            ]},
-        {<<"github">>, [
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
-                {callback_uri, <<"/auth/github/callback">>},
-                {scope, <<>>},
-                {authorize_uri, <<"https://github.com/login/oauth/authorize">>},
-                {token_uri, <<"https://github.com/login/oauth/access_token">>}
-            ]},
         {<<"google">>, [ % https://code.google.com/apis/console/b/0/
                 {client_id, <<"...">>},
                 {client_secret, <<"...">>},
@@ -40,6 +20,55 @@ predefined_networks() ->
                 {userinfo_uri, <<"https://www.googleapis.com/oauth2/v1/userinfo">>},
                 {userinfo_params, [{access_token, access_token}]},
                 {field_names, [id, email, name, picture, gender, locale]}
+            ]},
+        {<<"facebook">>, [ % https://developers.facebook.com/apps/
+                {client_id, <<"...">>},
+                {client_secret, <<"...">>},
+                {callback_uri, <<"/auth/facebook/callback">>},
+                {scope, <<"email">>},
+                {authorize_uri, <<"https://www.facebook.com/dialog/oauth">>},
+                {token_uri, <<"https://graph.facebook.com/oauth/access_token">>},
+                {userinfo_uri, <<"https://graph.facebook.com/me">>},
+                {userinfo_params, [{access_token, access_token},
+                        {fields, <<"id,email,name,picture,gender,locale">>}]},
+                {field_names, [id, email, name, picture, gender, locale]},
+                {field_fix, fun(picture, Profile, _) ->
+                            proplists:get_value(<<"url">>,
+                                proplists:get_value(<<"data">>,
+                                    proplists:get_value(<<"picture">>, Profile)));
+                        (Other, Profile, Default) -> Default(Other, Profile) end}
+            ]},
+        {<<"yandex">>, [ % https://oauth.yandex.ru/client/new
+                {client_id, <<"...">>},
+                {client_secret, <<"...">>},
+                {callback_uri, <<"/auth/yandex/callback">>},
+                {scope, <<>>},
+                {authorize_uri, <<"https://oauth.yandex.ru/authorize">>},
+                {token_uri, <<"https://oauth.yandex.ru/token">>},
+                {userinfo_uri, <<"https://login.yandex.ru/info">>},
+                {userinfo_params, [{oauth_token, access_token}, {format, <<"json">>}]},
+                {field_names, [id, default_email, real_name, picture, sex, undefined]}
+            ]},
+        {<<"vkontakte">>, [ % http://vk.com/dev
+                {client_id, <<"...">>},
+                {client_secret, <<"...">>},
+                {callback_uri, <<"/auth/vkontakte/callback">>},
+                {scope, <<"uid,first_name,last_name,sex,photo">>},
+                {authorize_uri, <<"https://oauth.vk.com/authorize">>},
+                {token_uri, <<"https://oauth.vk.com/access_token">>},
+                {userinfo_uri, <<"https://api.vk.com/method/users.get">>},
+                {userinfo_params, [{access_token, access_token},
+                        {fields, <<"uid,first_name,last_name,sex,photo">>}]},
+                {field_names, [uid, undefined, name, photo, gender, undefined]},
+                {field_pre, fun(Profile) -> hd(proplists:get_value(<<"response">>, Profile)) end},
+                {field_fix, fun(name, Profile, _) ->
+                                    << (proplists:get_value(<<"first_name">>, Profile))/binary,
+                                        " ",
+                                        (proplists:get_value(<<"last_name">>, Profile))/binary >>;
+                                (gender, Profile, _) ->
+                                    case proplists:get_value(<<"sex">>, Profile) of
+                                        1 -> <<"female">>; _ -> <<"male">> end;
+                                (Other, Profile, Default) -> Default(Other, Profile) end}
             ]},
         {<<"mailru">>, [
                 {client_id, <<"...">>},
@@ -58,29 +87,13 @@ predefined_networks() ->
                 {authorize_uri, <<"https://identity.x.com/xidentity/resources/authorize">>},
                 {token_uri, <<"https://identity.x.com/xidentity/oauthtokenservice">>}
             ]},
-        {<<"vkontakte">>, [ % http://vk.com/dev
+        {<<"github">>, [
                 {client_id, <<"...">>},
                 {client_secret, <<"...">>},
-                {callback_uri, <<"/auth/vkontakte/callback">>},
-                {scope, <<"uid,first_name,last_name,sex,photo">>},
-                {authorize_uri, <<"https://oauth.vk.com/authorize">>},
-                {token_uri, <<"https://oauth.vk.com/access_token">>},
-                {userinfo_uri, <<"https://api.vk.com/method/users.get">>},
-                {userinfo_params, [{access_token, access_token},
-                        {fields, <<"uid,first_name,last_name,sex,photo">>}]},
-                {field_names, [uid, undefined, first_name, photo, sex, undefined]},
-                {field_pre, fun(Profile) -> hd(proplists:get_value(<<"response">>, Profile)) end}
-            ]},
-        {<<"yandex">>, [ % https://oauth.yandex.ru/client/new
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
-                {callback_uri, <<"/auth/yandex/callback">>},
+                {callback_uri, <<"/auth/github/callback">>},
                 {scope, <<>>},
-                {authorize_uri, <<"https://oauth.yandex.ru/authorize">>},
-                {token_uri, <<"https://oauth.yandex.ru/token">>},
-                {userinfo_uri, <<"https://login.yandex.ru/info">>},
-                {userinfo_params, [{oauth_token, access_token}, {format, <<"json">>}]},
-                {field_names, [id, default_email, display_name, picture, sex, undefined]}
+                {authorize_uri, <<"https://github.com/login/oauth/authorize">>},
+                {token_uri, <<"https://github.com/login/oauth/access_token">>}
             ]}
     ].
 
@@ -219,8 +232,12 @@ get_profile_info(Network, Auth) ->
                 {error, _, _} = Error -> Error;
                 Profile -> Profile1 = case proplists:get_value(field_pre, Network) of
                         undefined -> Profile; F -> F(Profile) end,
-                    [{Field, proplists:get_value(list_to_binary(atom_to_list(Name)), Profile1)}
+                    [{Field, case {proplists:get_value(field_fix, Network), fun(Na, Pro) ->
+                                  proplists:get_value(list_to_binary(atom_to_list(Na)), Pro) end} of
+                                {undefined, DefF} -> DefF(Name, Profile1);
+                                {Func, DefF} -> Func(Name, Profile1, DefF)
+                            end}
                         || {Field, Name} <- lists:zip([id, email, name, picture, gender, locale],
-                        proplists:get_value(field_names, Network))] ++ Auth
+                        proplists:get_value(field_names, Network))] ++ [{raw, Profile} | Auth]
             end
         end).

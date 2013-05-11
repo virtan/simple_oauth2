@@ -58,11 +58,8 @@ Known issues (TODO)
 -------
 
 1. Support of Twitter, MailRu, GitHub, Paypal is upcoming
-2. Vk name doesn't contain last name
-3. FB avatar is not added yet
-4. Gender and locale semantics differ from one Social Network to another
-5. Vk doesn't provide email
-6. Yandex doesn't provide picture
+2. Vk doesn't provide email
+3. Yandex doesn't provide picture
 
 
 License (MIT)
