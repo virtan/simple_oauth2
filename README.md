@@ -1,0 +1,88 @@
+simple_oauth2
+==============
+
+Simple OAuth2 client for any http server framework
+Inspired by and based on https://github.com/dvv/social
+Preconfigured to authorize users of Google, Facebook, Yandex, Vkontakte
+
+
+Usage
+--------------
+
+1. Create OAuth2 web site app keys at
+  Google: https://code.google.com/apis/console/b/0/
+  Facebook: https://developers.facebook.com/apps/
+  Yandex: https://oauth.yandex.ru/client/new
+  Vkontakte: http://vk.com/dev
+
+2. Integrate into you http server framework
+
+   Example for MochiWeb (https://github.com/mochi/mochiweb):
+
+      SocNets = simple_oauth2:customize_networks(simple_oauth2:predefined_networks(), [
+              {<<"google">>, [
+                      {client_id, <<"GOOGLE_CLIENT_ID">>},
+                      {client_secret, <<"GOOGLE_CLIENT_SECRET">>}
+                  ]},
+              {<<"yandex">>, [
+                      {client_id, <<"YANDEX_CLIENT_ID">>},
+                      {client_secret, <<"YANDEX_CLIENT_SECRET">>}
+                  ]},
+              {<<"vkontakte">>, [
+                      {client_id, <<"VK_CLIENT_ID">>},
+                      {client_secret, <<"VK_CLIENT_SECRET">>}
+                  ]},
+              {<<"facebook">>, [
+                      {client_id, <<"FB_CLIENT_ID">>},
+                      {client_secret, <<"FB_CLIENT_SECRET">>}
+                  ]}
+          ]),
+      UrlPrefix = iolist_to_binary([atom_to_list(Req:get(scheme)), "://",
+              Req:get_header_value("host")]),
+      {_, QS, _} = mochiweb_util:urlsplit_path(Req:get(raw_path)),
+      case simple_oauth2:dispatcher(iolist_to_binary([Call, <<"?">>, QS]), UrlPrefix, SocNets) of
+          {redirect, Where} -> Req:respond({302,
+                      [{"Location", simple_oauth2:gather_url_get(Where)}], []});
+          {send_html, HTML} -> Req:ok({"text/html; charset=utf-8", HTML});
+          {ok, AuthData} -> Req:ok({"text/plain; charset=utf-8", io_lib:format("~p~n", [AuthData])});
+          {error, Class, Reason} ->
+              Req:ok({"text/plain; charset=utf-8", io_lib:format("Error: ~p ~p~n", [Class, Reason])})
+      end.
+
+3. Start ssl and inets erlang applications before
+
+You can easily add more social networks (see simple_oauth2:predefined_networks()) with OAuth2 authorization.
+
+
+Known issues (TODO)
+-------
+
+1. Support of Twitter, MailRu, GitHub, Paypal is upcoming
+2. Vk name doesn't contain last name
+3. FB avatar is not added yet
+4. Gender and locale semantics differ from one Social Network to another
+5. Vk doesn't provide email
+6. Yandex doesn't provide picture
+
+
+License (MIT)
+-------
+
+Copyright (c) 2013 Igor Milyakov <virtan@virtan.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
