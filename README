@@ -2,6 +2,7 @@ simple_oauth2
 ==============
 
 Simple OAuth2 client for any http server framework
+
 Inspired by and based on https://github.com/dvv/social
 Preconfigured to authorize users of Google, Facebook, Yandex, Vkontakte
 
@@ -39,31 +40,33 @@ Usage
           ]),
       UrlPrefix = iolist_to_binary([atom_to_list(Req:get(scheme)), "://",
               Req:get_header_value("host")]),
-      {_, QS, _} = mochiweb_util:urlsplit_path(Req:get(raw_path)),
-      case simple_oauth2:dispatcher(iolist_to_binary([Call, <<"?">>, QS]), UrlPrefix, SocNets) of
+      case simple_oauth2:dispatcher(list_to_binary(Req:get(raw_path)), UrlPrefix, SocNets) of
           {redirect, Where} -> Req:respond({302,
                       [{"Location", simple_oauth2:gather_url_get(Where)}], []});
           {send_html, HTML} -> Req:ok({"text/html; charset=utf-8", HTML});
-          {ok, AuthData} -> Req:ok({"text/plain; charset=utf-8", io_lib:format("~p~n", [AuthData])});
+          {ok, AuthData} ->
+              Req:ok({"text/plain; charset=utf-8", io_lib:format("~p~n", [AuthData])});
           {error, Class, Reason} ->
-              Req:ok({"text/plain; charset=utf-8", io_lib:format("Error: ~p ~p~n", [Class, Reason])})
+              Req:ok({"text/plain; charset=utf-8",
+                io_lib:format("Error: ~p ~p~n", [Class, Reason])})
       end.
 
 3. Start ssl and inets erlang applications before
 
-You can easily add more social networks (see simple_oauth2:predefined_networks()) with OAuth2 authorization.
+You can easily add more social networks (see simple_oauth2:predefined_networks())
+with OAuth2 authorization.
 
 
 Known issues (TODO)
--------
+--------------
 
-1. Support of Twitter, MailRu, GitHub, Paypal is upcoming
+1. Support of MailRu, GitHub, Paypal is upcoming
 2. Vk doesn't provide email
 3. Yandex doesn't provide picture
 
 
 License (MIT)
--------
+--------------
 
 Copyright (c) 2013 Igor Milyakov <virtan@virtan.com>
 

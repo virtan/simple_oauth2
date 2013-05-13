@@ -10,8 +10,6 @@
 predefined_networks() ->
     [
         {<<"google">>, [ % https://code.google.com/apis/console/b/0/
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
                 {callback_uri, <<"/auth/google/callback">>},
                 {scope, << "https://www.googleapis.com/auth/userinfo.email ",
                     "https://www.googleapis.com/auth/userinfo.profile" >>},
@@ -22,8 +20,6 @@ predefined_networks() ->
                 {field_names, [id, email, name, picture, gender, locale]}
             ]},
         {<<"facebook">>, [ % https://developers.facebook.com/apps/
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
                 {callback_uri, <<"/auth/facebook/callback">>},
                 {scope, <<"email">>},
                 {authorize_uri, <<"https://www.facebook.com/dialog/oauth">>},
@@ -39,8 +35,6 @@ predefined_networks() ->
                         (Other, Profile, Default) -> Default(Other, Profile) end}
             ]},
         {<<"yandex">>, [ % https://oauth.yandex.ru/client/new
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
                 {callback_uri, <<"/auth/yandex/callback">>},
                 {scope, <<>>},
                 {authorize_uri, <<"https://oauth.yandex.ru/authorize">>},
@@ -50,8 +44,6 @@ predefined_networks() ->
                 {field_names, [id, default_email, real_name, picture, sex, undefined]}
             ]},
         {<<"vkontakte">>, [ % http://vk.com/dev
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
                 {callback_uri, <<"/auth/vkontakte/callback">>},
                 {scope, <<"uid,first_name,last_name,sex,photo">>},
                 {authorize_uri, <<"https://oauth.vk.com/authorize">>},
@@ -71,8 +63,6 @@ predefined_networks() ->
                                 (Other, Profile, Default) -> Default(Other, Profile) end}
             ]},
         {<<"mailru">>, [
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
                 {secret_key, <<"f431aea09762dbad13c2440955e12aee">>},
                 {callback_uri, <<"/auth/mailru/callback">>},
                 {scope, <<>>},
@@ -80,16 +70,12 @@ predefined_networks() ->
                 {token_uri, <<"https://connect.mail.ru/oauth/token">>}
             ]},
         {<<"paypal">>, [
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
                 {callback_uri, <<"/auth/paypal/callback">>},
                 {scope, <<"https://identity.x.com/xidentity/resources/profile/me">>},
                 {authorize_uri, <<"https://identity.x.com/xidentity/resources/authorize">>},
                 {token_uri, <<"https://identity.x.com/xidentity/oauthtokenservice">>}
             ]},
         {<<"github">>, [
-                {client_id, <<"...">>},
-                {client_secret, <<"...">>},
                 {callback_uri, <<"/auth/github/callback">>},
                 {scope, <<>>},
                 {authorize_uri, <<"https://github.com/login/oauth/authorize">>},
