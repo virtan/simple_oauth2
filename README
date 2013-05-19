@@ -4,7 +4,7 @@ simple_oauth2
 Simple OAuth2 client for any http server framework
 
 Inspired by and based on https://github.com/dvv/social
-Preconfigured to authorize users of Google, Facebook, Yandex, Vkontakte
+Preconfigured to authorize users of Google, Facebook, Yandex, Vkontakte, Mail.ru
 
 
 Usage
@@ -36,6 +36,11 @@ Usage
               {<<"facebook">>, [
                       {client_id, <<"FB_CLIENT_ID">>},
                       {client_secret, <<"FB_CLIENT_SECRET">>}
+                  ]},
+              {<<"mailru">>, [
+                      {client_id, <<"MR_CLIENT_ID">>},
+                      {client_secret, <<"MR_CLIENT_SECRET">>},
+                      {client_secret_key, <<"MR_CLIENT_SECRET_KEY">>}
                   ]}
           ]),
       UrlPrefix = iolist_to_binary([atom_to_list(Req:get(scheme)), "://",
@@ -60,7 +65,7 @@ with OAuth2 authorization.
 Known issues (TODO)
 --------------
 
-1. Support of MailRu, GitHub, Paypal is upcoming
+1. Support of GitHub, Paypal is upcoming
 2. Vk doesn't provide email
 3. Yandex doesn't provide picture
 

@@ -7,6 +7,8 @@
         gather_url_get/1
     ]).
 
+-import(proplists, [get_value/2, get_value/3]).
+
 predefined_networks() ->
     [
         {<<"google">>, [ % https://code.google.com/apis/console/b/0/
@@ -29,9 +31,9 @@ predefined_networks() ->
                         {fields, <<"id,email,name,picture,gender,locale">>}]},
                 {field_names, [id, email, name, picture, gender, locale]},
                 {field_fix, fun(picture, Profile, _) ->
-                            proplists:get_value(<<"url">>,
-                                proplists:get_value(<<"data">>,
-                                    proplists:get_value(<<"picture">>, Profile)));
+                            get_value(<<"url">>,
+                                get_value(<<"data">>,
+                                    get_value(<<"picture">>, Profile)));
                         (Other, Profile, Default) -> Default(Other, Profile) end}
             ]},
         {<<"yandex">>, [ % https://oauth.yandex.ru/client/new
@@ -52,22 +54,45 @@ predefined_networks() ->
                 {userinfo_params, [{access_token, access_token},
                         {fields, <<"uid,first_name,last_name,sex,photo">>}]},
                 {field_names, [uid, undefined, name, photo, gender, undefined]},
-                {field_pre, fun(Profile) -> hd(proplists:get_value(<<"response">>, Profile)) end},
+                {field_pre, fun(Profile) -> hd(get_value(<<"response">>, Profile)) end},
                 {field_fix, fun(name, Profile, _) ->
-                                    << (proplists:get_value(<<"first_name">>, Profile))/binary,
+                                    << (get_value(<<"first_name">>, Profile))/binary,
                                         " ",
-                                        (proplists:get_value(<<"last_name">>, Profile))/binary >>;
-                                (gender, Profile, _) ->
-                                    case proplists:get_value(<<"sex">>, Profile) of
+                                        (get_value(<<"last_name">>, Profile))/binary >>;
+                                (gender, Profile, _) -> case get_value(<<"sex">>, Profile) of
                                         1 -> <<"female">>; _ -> <<"male">> end;
                                 (Other, Profile, Default) -> Default(Other, Profile) end}
             ]},
         {<<"mailru">>, [
-                {secret_key, <<"f431aea09762dbad13c2440955e12aee">>},
                 {callback_uri, <<"/auth/mailru/callback">>},
                 {scope, <<>>},
                 {authorize_uri, <<"https://connect.mail.ru/oauth/authorize">>},
-                {token_uri, <<"https://connect.mail.ru/oauth/token">>}
+                {token_uri, <<"https://connect.mail.ru/oauth/token">>},
+                {userinfo_uri, <<"http://www.appsmail.ru/platform/api">>},
+                {userinfo_composer, fun(Auth, Network) -> 
+                           [
+                                {app_id, get_value(client_id, Network)},
+                                {method, <<"users.getInfo">>},
+                                {secure, <<"1">>},
+                                {session_key, get_value(access_token, Auth)},
+                                {sig, list_to_binary(lists:flatten(
+                                 [io_lib:format("~2.16.0b", [X]) || X <- binary_to_list(erlang:md5(
+                                      <<"app_id=", (get_value(client_id, Network))/binary,
+                                        "method=users.getInfosecure=1session_key=",
+                                        (get_value(access_token, Auth))/binary,
+                                        (get_value(client_secret_key, Network))/binary>>
+                                    ))]))}
+                            ] end},
+                {field_names, [uid, email, name, pic, sex, undefined]},
+                {field_pre, fun(Profile) -> hd(Profile) end},
+                {field_fix, fun(name, Profile, _) ->
+                                    << (get_value(<<"first_name">>, Profile))/binary,
+                                        " ",
+                                        (get_value(<<"last_name">>, Profile))/binary >>;
+                                (sex, Profile, _) -> case get_value(<<"sex">>, Profile) of
+                                        1 -> <<"female">>; _ -> <<"male">> end;
+                                (Other, Profile, Default) -> Default(Other, Profile) end}
+
             ]},
         {<<"paypal">>, [
                 {callback_uri, <<"/auth/paypal/callback">>},
@@ -86,12 +111,12 @@ predefined_networks() ->
 customize_networks(Networks, Customization) ->
     [
         {Network, fun() ->
-           CustOpts = proplists:get_value(Network, Customization),
+           CustOpts = get_value(Network, Customization),
            {_, Rem} = proplists:split(Options, proplists:get_keys(CustOpts)),
            CustOpts ++ Rem
            end()}
         || {Network, Options} <- Networks,
-           proplists:get_value(Network, Customization, undefined) =/= undefined
+           get_value(Network, Customization, undefined) =/= undefined
     ].
 
 parse_gets(<<>>) -> [];
@@ -106,24 +131,24 @@ dispatcher(Request, LocalUrlPrefix, Networks) ->
         [] -> [];
         [QString] -> parse_gets(QString)
     end,
-    Network = proplists:get_value(NetName, Networks),
+    Network = get_value(NetName, Networks),
     case {Network, Action} of
         {undefined, _} -> {error, unknown_network, "Unknown or not customized social network"};
         {_, <<"login">>} ->
             {redirect,
-                {proplists:get_value(authorize_uri, Network), [
-                    {client_id, proplists:get_value(client_id, Network)},
+                {get_value(authorize_uri, Network), [
+                    {client_id, get_value(client_id, Network)},
                     {redirect_uri, iolist_to_binary([LocalUrlPrefix,
-                                proplists:get_value(callback_uri, Network)])},
-                    {response_type, proplists:get_value(<<"response_type">>, Gets, <<"code">>)},
-                    {scope, proplists:get_value(scope, Network)},
-                    {state, proplists:get_value(<<"state">>, Gets, <<>>)}
+                                get_value(callback_uri, Network)])},
+                    {response_type, get_value(<<"response_type">>, Gets, <<"code">>)},
+                    {scope, get_value(scope, Network)},
+                    {state, get_value(<<"state">>, Gets, <<>>)}
                 ]}
             };
         {_, <<"callback">>} ->
-            case proplists:get_value(<<"error">>, Gets, undefined) of
-                undefined -> case proplists:get_value(<<"code">>, Gets, undefined) of
-                        undefined -> case proplists:get_value(<<"access_token">>, Gets, undefined) of
+            case get_value(<<"error">>, Gets, undefined) of
+                undefined -> case get_value(<<"code">>, Gets, undefined) of
+                        undefined -> case get_value(<<"access_token">>, Gets, undefined) of
                                 undefined -> {send_html, <<
                                         "<!--script>",
                                         "window.location.replace(window.location.href.replace('#','?'))",
@@ -132,17 +157,17 @@ dispatcher(Request, LocalUrlPrefix, Networks) ->
                                 Token -> {ok, get_profile_info(Network, [
                                         {network, NetName},
                                         {access_token, Token},
-                                        {token_type, proplists:get_value(<<"token_type">>, Gets,
+                                        {token_type, get_value(<<"token_type">>, Gets,
                                                 <<"bearer">>)}
                                     ])}
                             end;
                         Code ->
-                            post({NetName, Network}, proplists:get_value(token_uri, Network), [
+                            post({NetName, Network}, get_value(token_uri, Network), [
                                 {code, Code},
-                                {client_id, proplists:get_value(client_id, Network)},
-                                {client_secret, proplists:get_value(client_secret, Network)},
+                                {client_id, get_value(client_id, Network)},
+                                {client_secret, get_value(client_secret, Network)},
                                 {redirect_uri, iolist_to_binary([LocalUrlPrefix,
-                                            proplists:get_value(callback_uri, Network)])},
+                                            get_value(callback_uri, Network)])},
                                 {grant_type, <<"authorization_code">>}
                             ])
                     end;
@@ -171,8 +196,8 @@ http_request_json(Method, Request, OnSuccess) ->
             [{timeout, 10000}, {connect_timeout, 20000}, {autoredirect, true}],
             [{body_format, binary}, {full_result, false}]) of
         {ok, {200, JSON}} -> OnSuccess(JSON);
-        {ok, {Code, _}} -> {error, post_error, lists:flatten("Post returned non-200 code: " ++
-                    integer_to_list(Code))};
+        {ok, {Code, _Ret}} -> {error, post_error, lists:flatten("Post returned non-200 code: " ++
+                    integer_to_list(Code) ++ _Ret)};
         {error, Reason} -> {error, http_request_error, Reason}
     end.
 
@@ -181,11 +206,11 @@ post({NetName, Network}, Url, Params) ->
             url_encode(Params)},
         fun(JSON) -> case json_parse(JSON) of
                 {error, _, _} = Error -> Error;
-                Hash -> case proplists:get_value(<<"error">>, Hash, undefined) of
+                Hash -> case get_value(<<"error">>, Hash, undefined) of
                         undefined -> {ok, get_profile_info(Network, [
                             {network, NetName},
-                            {access_token, proplists:get_value(<<"access_token">>, Hash)},
-                            {token_type, proplists:get_value(<<"token_type">>, Hash, <<"bearer">>)}
+                            {access_token, get_value(<<"access_token">>, Hash)},
+                            {token_type, get_value(<<"token_type">>, Hash, <<"bearer">>)}
                         ])};
                         Error -> {error, unsuccessful, Error}
                     end
@@ -210,20 +235,23 @@ gather_url_get({Path, QueryString}) ->
 
 get_profile_info(Network, Auth) ->
     http_request_json(get, {binary_to_list(gather_url_get(
-                    {proplists:get_value(userinfo_uri, Network), lists:map(fun({K, access_token}) ->
-                                    {K, proplists:get_value(access_token, Auth)};
-                                (P) -> P end, proplists:get_value(userinfo_params, Network))
-                        })), []},
+                    {get_value(userinfo_uri, Network),
+                        case get_value(userinfo_composer, Network) of
+                            undefined -> lists:map(fun({K, access_token}) ->
+                                            {K, get_value(access_token, Auth)};
+                                        (P) -> P end, get_value(userinfo_params, Network));
+                            UIComp -> UIComp(Auth, Network)
+                        end})), []},
             fun(JSON) -> case json_parse(JSON) of
                 {error, _, _} = Error -> Error;
-                Profile -> Profile1 = case proplists:get_value(field_pre, Network) of
+                Profile -> Profile1 = case get_value(field_pre, Network) of
                         undefined -> Profile; F -> F(Profile) end,
-                    [{Field, case {proplists:get_value(field_fix, Network), fun(Na, Pro) ->
-                                  proplists:get_value(list_to_binary(atom_to_list(Na)), Pro) end} of
+                    [{Field, case {get_value(field_fix, Network), fun(Na, Pro) ->
+                                  get_value(list_to_binary(atom_to_list(Na)), Pro) end} of
                                 {undefined, DefF} -> DefF(Name, Profile1);
                                 {Func, DefF} -> Func(Name, Profile1, DefF)
                             end}
                         || {Field, Name} <- lists:zip([id, email, name, picture, gender, locale],
-                        proplists:get_value(field_names, Network))] ++ [{raw, Profile} | Auth]
+                        get_value(field_names, Network))] ++ [{raw, Profile} | Auth]
             end
         end).
