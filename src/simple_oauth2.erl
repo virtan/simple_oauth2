@@ -38,7 +38,7 @@ predefined_networks() ->
             ]},
         {<<"yandex">>, [ % https://oauth.yandex.ru/client/new
                 {callback_uri, <<"/auth/yandex/callback">>},
-                {scope, <<>>},
+                {scope, <<"login:birthday login:email login:info">>},
                 {authorize_uri, <<"https://oauth.yandex.ru/authorize">>},
                 {token_uri, <<"https://oauth.yandex.ru/token">>},
                 {userinfo_uri, <<"https://login.yandex.ru/info">>},
